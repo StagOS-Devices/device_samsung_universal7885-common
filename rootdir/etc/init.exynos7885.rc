@@ -8,9 +8,6 @@ on early-init
 on init
     start watchdogd
 
-    # Fastcharge
-    chown system radio /sys/class/sec/switch/afc_disable
-
     write /proc/sys/vm/swappiness 160
 
     # ZRAM setup
@@ -62,7 +59,7 @@ on late-fs
 
 on post-fs
     # Allow writing to the kernel trace log.
-    chmod 0222 /sys/kernel/debug/tracing/trace_marker
+#    chmod 0222 /sys/kernel/debug/tracing/trace_marker
 
     # set RLIMIT_MEMLOCK to 64MB
     setrlimit 8 67108864 67108864
@@ -137,8 +134,8 @@ on post-fs-data
     chown audioserver system /sys/devices/platform/14a50000.abox/14a50000.abox:abox_debug@0/calliope_iva
 
 # FM Radio
-    chown system audio /dev/radio0
-    chmod 0660 /dev/radio0
+#    chown system audio /dev/radio0
+#    chmod 0660 /dev/radio0
 
 # Permissions for backlight
     chown system system /sys/class/backlight/panel/brightness

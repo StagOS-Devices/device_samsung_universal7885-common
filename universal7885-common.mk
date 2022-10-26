@@ -17,22 +17,17 @@ PRODUCT_ENFORCE_RRO_TARGETS := framework-res SystemUI Bluetooth
 PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS := # leave it empty
 
 PRODUCT_PACKAGES += \
-    android.hardware.audio@7.0-impl \
+    android.hardware.audio@7.1-impl \
     android.hardware.audio.service \
     android.hardware.audio.effect@7.0-impl \
     libtinycompress \
     audio.r_submix.default \
-    audio.usb.default \
-    audio.hearing_aid.default
-
-# FaceUnlock libs
-PRODUCT_PACKAGES += faceunlock_vendor_dependencies
+    audio.usb.default
 
 # Audio (BT)
 PRODUCT_PACKAGES += \
-    android.hardware.bluetooth.audio@2.1-impl \
-    audio.bluetooth.default \
-    audio.a2dp.default
+    android.hardware.bluetooth.audio-impl \
+    audio.bluetooth.default
 
 # Audio Configs
 PRODUCT_COPY_FILES += \
@@ -50,12 +45,46 @@ PRODUCT_COPY_FILES += \
 # Bluetooth
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth@1.1-service \
-    audio.a2dp.default \
     libbt-vendor
 
 PRODUCT_COPY_FILES += \
     hardware/samsung_slsi/libbt/conf/bt_did.conf:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth/bt_did.conf \
     hardware/samsung_slsi/libbt/conf/bt_vendor.conf:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth/bt_vendor.conf
+
+# Set the Bluetooth Class of Device
+# Service Field: 0x5A -> 90
+#    Bit 17: Networking
+#    Bit 19: Capturing
+#    Bit 20: Object Transfer
+#    Bit 22: Telephony
+# MAJOR_CLASS: 0x02 -> 2 (Phone)
+# MINOR_CLASS: 0x0C -> 12 (Smart Phone)
+PRODUCT_PRODUCT_PROPERTIES += \
+    bluetooth.device.class_of_device=90,2,12
+
+# Set supported Bluetooth profiles to enabled
+PRODUCT_PRODUCT_PROPERTIES += \
+    bluetooth.profile.asha.central.enabled=true \
+    bluetooth.profile.a2dp.source.enabled=true \
+    bluetooth.profile.avrcp.target.enabled=true \
+    bluetooth.profile.bap.broadcast.assist.enabled=true \
+    bluetooth.profile.bap.unicast.server.enabled=true \
+    bluetooth.profile.bas.client.enabled=true \
+    bluetooth.profile.csip.set_coordinator.enabled=true \
+    bluetooth.profile.gatt.enabled=true \
+    bluetooth.profile.hap.client.enabled=true \
+    bluetooth.profile.hfp.ag.enabled=true \
+    bluetooth.profile.hid.device.enabled=true \
+    bluetooth.profile.hid.host.enabled=true \
+    bluetooth.profile.map.server.enabled=true \
+    bluetooth.profile.mcp.server.enabled=true \
+    bluetooth.profile.opp.enabled=true \
+    bluetooth.profile.pan.nap.enabled=true \
+    bluetooth.profile.pan.panu.enabled=true \
+    bluetooth.profile.pbap.server.enabled=true \
+    bluetooth.profile.sap.server.enabled=true \
+    bluetooth.profile.tbs.server.enabled=true \
+    bluetooth.profile.vc.server.enabled=true
 
 # Camera
 TARGET_BOARD_CAMERA_COUNT ?= 3
@@ -69,14 +98,14 @@ endif
 
 # Camera app
 PRODUCT_PACKAGES += \
-    Footej
+    Camera
 
 # Charger
 PRODUCT_PACKAGES += \
     libsuspend
 
 # Debug
-PRODUCT_PACKAGES += eklogger
+PRODUCT_PACKAGES += eklogger dlopener dlopener.vendor
 
 # DRM
 PRODUCT_PACKAGES += \
@@ -89,10 +118,6 @@ ifeq ($(TARGET_BOARD_HAS_FP), true)
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint@2.3-service.samsung
 endif
-
-# Samsung FMRadio impl
-PRODUCT_PACKAGES += \
-    FMRadio
 
 # Gatekeeper
 PRODUCT_PACKAGES += \
@@ -113,8 +138,8 @@ PRODUCT_PACKAGES += \
 
 # Health
 PRODUCT_PACKAGES += \
-    android.hardware.health@2.1-impl-exynos7885 \
-    android.hardware.health@2.1-impl-exynos7885.recovery \
+    android.hardware.health@2.1-impl \
+    android.hardware.health@2.1-impl.recovery \
     android.hardware.health@2.1-service
 
 # HIDL
@@ -156,8 +181,7 @@ PRODUCT_COPY_FILES += \
 
 # Memtrack
 PRODUCT_PACKAGES += \
-    android.hardware.memtrack@1.0-impl \
-    android.hardware.memtrack@1.0-service
+    android.hardware.memtrack-service.samsung-mali
 
 # NFC
 PRODUCT_PACKAGES += \
@@ -228,6 +252,10 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/power/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
 
+# Power Stats impl
+PRODUCT_PACKAGES += \
+    android.hardware.power.stats-service.exynos7
+
 # Protobuf
 PRODUCT_PACKAGES += \
     libprotobuf-cpp-full-vendorcompat \
@@ -240,6 +268,7 @@ PRODUCT_COPY_FILES += \
 # RIL
 PRODUCT_PACKAGES += \
     android.hardware.radio@1.4.vendor \
+    android.hardware.radio@1.0 \
     android.hardware.radio.config@1.2.vendor \
     android.hardware.radio.deprecated@1.0.vendor \
     vendor.samsung.hardware.radio@2.1.vendor \
@@ -277,10 +306,6 @@ PRODUCT_SOONG_NAMESPACES += \
     hardware/google/pixel \
     hardware/samsung
 
-# Sysconfig
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/sysconfig/component-overrides.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sysconfig/component-overrides-bt.xml
-
 # Thermal
 PRODUCT_PACKAGES += \
     android.hardware.thermal@1.0-impl \
@@ -292,11 +317,11 @@ PRODUCT_PACKAGES += \
 
 # VNDK
 PRODUCT_COPY_FILES += \
-    prebuilts/vndk/v29/arm64/arch-arm-armv8-a/shared/vndk-sp/libcutils.so:$(TARGET_COPY_OUT_VENDOR)/lib/libcutils-v29.so
+    prebuilts/vndk/v32/arm64/arch-arm-armv8-a/shared/vndk-sp/libutils.so:$(TARGET_COPY_OUT_VENDOR)/lib/libutils-v32.so
 
 ifeq ($(TARGET_LOCAL_ARCH),arm64)
 PRODUCT_COPY_FILES += \
-    prebuilts/vndk/v29/arm64/arch-arm64-armv8-a/shared/vndk-sp/libcutils.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libcutils-v29.so
+    prebuilts/vndk/v32/arm64/arch-arm64-armv8-a/shared/vndk-sp/libutils.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libutils-v32.so
 endif
 
 # Workaround for vintf issues...

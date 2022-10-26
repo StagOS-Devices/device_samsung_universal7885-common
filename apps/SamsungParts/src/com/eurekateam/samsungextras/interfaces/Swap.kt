@@ -16,9 +16,20 @@
 
 package com.eurekateam.samsungextras.interfaces
 
-object Swap {
-    external fun setSwapOn(mEnabled: Boolean)
-    external fun setSize(mSize: Int)
+import android.os.ServiceManager
+import vendor.eureka.hardware.parts.ISwapOnData
+
+class Swap {
+    private val mSwap: ISwapOnData
+    init {
+        mSwap = ISwapOnData.Stub.asInterface(ServiceManager.waitForDeclaredService("vendor.eureka.hardware.parts.ISwapOnData/default"))
+    }
+
+    external fun setSwapOn(mCallBackEnabled: Boolean)
+    fun setSwapOff() = mSwap.setSwapOff()
+    fun mkFile(mSize: Int) = mSwap.makeSwapFile(mSize)
+    fun delFile() = mSwap.removeSwapFile()
+    fun isLocked(): Boolean = mSwap.isMutexLocked()
     external fun getFreeSpace(): Double
     external fun getSwapSize(): Long
 }

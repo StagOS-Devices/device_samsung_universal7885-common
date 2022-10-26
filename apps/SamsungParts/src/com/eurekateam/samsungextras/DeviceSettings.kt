@@ -26,15 +26,16 @@ import androidx.preference.SwitchPreference
 import com.eurekateam.samsungextras.battery.BatteryActivity
 import com.eurekateam.samsungextras.flashlight.FlashLightActivity
 import com.eurekateam.samsungextras.fps.FPSInfoService
-import com.eurekateam.samsungextras.interfaces.Display.DT2W
-import com.eurekateam.samsungextras.interfaces.Display.GloveMode
+import com.eurekateam.samsungextras.interfaces.Display
 import com.eurekateam.samsungextras.speaker.ClearSpeakerActivity
+import com.eurekateam.samsungextras.smartcharge.SmartChargeActivity
 
 class DeviceSettings : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
 
     private lateinit var mPrefs: SharedPreferences
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        System.loadLibrary("samsungparts_jni")
+        System.loadLibrary("StorageHelper")
+        System.loadLibrary("SwapCallback")
         setPreferencesFromResource(R.xml.preferences_samsung_parts, rootKey)
         mPrefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val mClearSpeakerPref = findPreference<Preference>(PREF_CLEAR_SPEAKER)!!
@@ -69,9 +70,17 @@ class DeviceSettings : PreferenceFragmentCompat(), Preference.OnPreferenceChange
                 startActivity(intent)
                 true
             }
+        val mSmartCharge = findPreference<Preference>(PREF_SMARTCHARGE)!!
+        mSmartCharge.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                val intent = Intent(requireActivity().applicationContext, SmartChargeActivity::class.java)
+                startActivity(intent)
+                true
+            }
     }
 
     override fun onPreferenceChange(preference: Preference, value: Any): Boolean {
+        val mDisplay = Display()
         when (preference.key) {
             PREF_KEY_FPS_INFO -> {
                 val mEnabled = value as Boolean
@@ -84,11 +93,11 @@ class DeviceSettings : PreferenceFragmentCompat(), Preference.OnPreferenceChange
                 mPrefs.edit().putBoolean(PREF_KEY_FPS_INFO, mEnabled).apply()
             }
             PREF_DOUBLE_TAP -> {
-                DT2W = value as Boolean
+                mDisplay.DT2W = value as Boolean
                 mPrefs.edit().putBoolean(PREF_DOUBLE_TAP, value).apply()
             }
             PREF_GLOVE_MODE -> {
-                GloveMode = value as Boolean
+                mDisplay.GloveMode = value as Boolean
                 mPrefs.edit().putBoolean(PREF_GLOVE_MODE, value).apply()
             }
             else -> {
@@ -105,5 +114,6 @@ class DeviceSettings : PreferenceFragmentCompat(), Preference.OnPreferenceChange
         const val PREF_DOUBLE_TAP = "dt2w_settings"
         const val PREF_GLOVE_MODE = "glove_mode_settings"
         const val PREF_BATTERY = "battery_settings"
+        const val PREF_SMARTCHARGE = "smartcharge_settings"
     }
 }

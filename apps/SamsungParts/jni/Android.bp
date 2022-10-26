@@ -1,19 +1,26 @@
 cc_library_shared {
-    name: "libsamsungparts_jni",
-    defaults: ["eureka_defaults"],
+    name: "libStorageHelper",
     cflags: [
         "-Wall",
         "-Wextra",
         "-Wno-unused-parameter",
         "-Werror",
     ],
-    srcs: ["*.cpp"],
+    srcs: ["Storage.cpp"],
     header_libs: ["jni_headers"],
     static_libs: ["libc++fs"],
+}
+
+cc_library_shared {
+    name: "libSwapCallback",
+    srcs: [
+       "SwapCallbackImpl.cpp",
+       "SwapCallbackNative.cpp",
+    ],
+    header_libs: ["jni_headers"],
     shared_libs: [
-        "libhidlbase",
-        "liblog",
-        "libutils",
-        "vendor.eureka.hardware.parts@1.0",
+       "vendor.eureka.hardware.parts-V1-ndk",
+       "libbase",
+       "libbinder_ndk",
     ],
 }

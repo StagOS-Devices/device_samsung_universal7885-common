@@ -17,6 +17,8 @@ package com.eurekateam.samsungextras.swap
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Switch
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -26,7 +28,8 @@ import com.android.settingslib.widget.MainSwitchPreference
 import com.android.settingslib.widget.OnMainSwitchChangeListener
 import com.eurekateam.samsungextras.R
 import com.eurekateam.samsungextras.interfaces.Swap
-import java.lang.Thread
+import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 class SwapFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener, OnMainSwitchChangeListener {
     private lateinit var mSwapSizePref: SeekBarPreference
@@ -34,6 +37,10 @@ class SwapFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeLi
     private lateinit var mSwapEnable: MainSwitchPreference
     private lateinit var mFreeSpace: Preference
     private lateinit var mSwapFileSize: Preference
+    private var mPoolExecutor = ScheduledThreadPoolExecutor(3)
+    private var mSwapSize = 0
+    private val mSwap = Swap()
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.swap_settings)
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
@@ -46,37 +53,54 @@ class SwapFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeLi
         mSwapEnable.isChecked = mSharedPreferences.getBoolean(PREF_SWAP_ENABLE, false)
         mSwapEnable.addOnSwitchChangeListener(this)
         mSwapSizePref.isEnabled = !mSwapEnable.isChecked
+        mSwapSizePref.showSeekBarValue = true
         mFreeSpace = findPreference(INFO_FREE_SPACE)!!
-        mFreeSpace.summary = "${Swap.getFreeSpace()} GB"
+        mFreeSpace.summary = "${mSwap.getFreeSpace()} GB"
         mSwapFileSize = findPreference(INFO_SWAP_FILE_SIZE)!!
-        mSwapFileSize.summary = "${Swap.getSwapSize()} MB"
+        mSwapFileSize.summary = "${mSwap.getSwapSize()} MB"
+        mPoolExecutor.scheduleWithFixedDelay(mScheduler, 0, 3, TimeUnit.SECONDS)
     }
+
+    private val mScheduler = Runnable { requireActivity().runOnUiThread {
+       mSwapEnable.isEnabled = !mSwap.isLocked()
+       mFreeSpace.summary = "${mSwap.getFreeSpace()} GB"
+       mSwapFileSize.summary = "${mSwap.getSwapSize()} MB"
+      } }
 
     override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
         if (preference == mSwapSizePref) {
             val value = newValue as Int
-            Swap.setSize(value)
+            mSwapSize = value
             mSharedPreferences.edit().putInt(PREF_SWAP_SIZE, value).apply()
-            mFreeSpace.summary = "${Swap.getFreeSpace()} GB"
-            mSwapFileSize.summary = "${Swap.getSwapSize()} MB"
             return true
         }
         return false
     }
 
+    // This is called from native - DO NOT CHANGE SIGNATURE
+    fun reactToCallbackNative(res: Boolean) {
+        if (!res) {
+            mSwap.delFile()
+            mSharedPreferences.edit().putBoolean(PREF_SWAP_ENABLE, false).apply()
+            mSwapSizePref.isEnabled = true
+        }
+    }
+
     override fun onSwitchChanged(switchView: Switch, isChecked: Boolean) {
         mSwapEnable.isEnabled = false
-        Thread {
-            Swap.setSwapOn(isChecked)
-            requireActivity().runOnUiThread {
-                mSwapEnable.isEnabled = true
-                mSharedPreferences.edit().putBoolean(PREF_SWAP_ENABLE, isChecked).apply()
-                mSwapSizePref.isEnabled = !isChecked
-		mFreeSpace.summary = "${Swap.getFreeSpace()} GB"
-		mSwapFileSize.summary = "${Swap.getSwapSize()} MB"
-            }
-        }.start()
-    } 
+        val mSwap = Swap()
+        if (isChecked) {
+            mSwap.mkFile(mSwapSize)
+            mSwap.setSwapOn(true)
+        } else {
+            mSwap.setSwapOff()
+            mSwap.delFile()
+        }
+        mSwapEnable.isEnabled = true
+        mSharedPreferences.edit().putBoolean(PREF_SWAP_ENABLE, isChecked).apply()
+        mSwapSizePref.isEnabled = !isChecked
+    }
+
     companion object {
         const val PREF_SWAP_SIZE = "swap_size"
         const val PREF_SWAP_ENABLE = "swap_enable"
