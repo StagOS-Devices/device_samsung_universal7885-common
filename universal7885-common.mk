@@ -3,9 +3,6 @@ ifeq ($(TARGET_LOCAL_ARCH),arm64)
 $(call inherit-product, vendor/samsung/universal7885-common/universal7885-common-vendor.mk)
 endif
 
-# Build Fingerprints
-$(call inherit-product, $(LOCAL_PATH)/fingerprint.mk)
-
 # Allow Copying of apks.
 PRODUCT_BROKEN_VERIFY_USES_LIBRARIES := true
 
